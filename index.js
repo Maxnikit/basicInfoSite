@@ -3,56 +3,37 @@ const url = require("url");
 const fs = require("fs");
 
 const routes = ["/about", "/contact-me"];
-
+const errorPage = fs.readFileSync("404.html", "utf8", (err, data) => {
+  if (err) {
+    throw err;
+  }
+  return data;
+});
 http
   .createServer(function (request, response) {
     const q = url.parse(request.url, true);
-    const pathName = q.pathname;
-
-    if (pathName === "/") {
-      fs.readFile("index.html", (err, data) => {
-        if (err) {
-          response.writeHead(404, {
-            "Content-Type": "text/html",
-          });
-          return response.end("404 Not found");
-        } else {
-          response.writeHead(200, {
-            "Content-Type": "text/html",
-          });
-          return response.end(data);
-        }
-      });
-    }
-    if (routes.includes(pathName)) {
-      fs.readFile(`.${pathName}.html`, (err, data) => {
-        if (err) {
-          response.writeHead(404, {
-            "Content-Type": "text/html",
-          });
-          return response.end("404 Not found");
-        } else {
-          response.writeHead(200, {
-            "Content-Type": "text/html",
-          });
-          return response.end(data);
-        }
-      });
+    let filename;
+    if (q.pathname === "/") {
+      filename = "." + "/index.html";
     } else {
-      fs.readFile("404.html", (err, data) => {
-        if (err) {
-          response.writeHead(404, {
-            "Content-Type": "text/html",
-          });
-          return response.end("Couldn't read 404.html");
-        } else {
-          response.writeHead(404, {
-            "Content-Type": "text/html",
-          });
-          return response.end(data);
-        }
-      });
+      filename = "." + q.pathname + ".html";
     }
+
+    fs.readFile(filename, (err, data) => {
+      if (err) {
+        response.writeHead(404, {
+          "Content-Type": "text/html",
+        });
+        response.write(errorPage);
+        return response.end();
+      } else {
+        response.writeHead(200, {
+          "Content-Type": "text/html",
+        });
+        response.write(data);
+        return response.end();
+      }
+    });
   })
   .listen(8081);
 
